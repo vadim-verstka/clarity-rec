@@ -1,0 +1,11 @@
+{
+  "name": "diploma-project",
+  "version": "1.0.0",
+  "description": "Integrated intelligent recommendation system with adaptive explanation visualization module",
+  "scripts": {
+    "dev": "concurrently -n \"FRONTEND,BACKEND,REC-SVC,EXPLAIN-SVC\" -c \"blue,green,yellow,magenta\" \"npm run dev --prefix web-app/frontend\" \"npm start --prefix web-app/backend\" \"npm start --prefix rec-service\" \"npm start --prefix explain-service\""
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  }
+}
