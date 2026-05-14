@@ -28,10 +28,9 @@
           <p>{{ card.description }}</p>
           <button
             @click="handleLike(card)"
-            :disabled="likedCards.has(card.id)"
             :class="['btn-like', { liked: likedCards.has(card.id) }]"
           >
-            {{ likedCards.has(card.id) ? "❤️ Лайкнуто" : "👍 Лайк" }}
+            {{ likedCards.has(card.id) ? "❤️ Убрать лайк" : "👍 Лайк" }}
           </button>
         </div>
       </div>
@@ -81,8 +80,6 @@ const loadFeed = async () => {
 };
 
 const handleLike = async (card) => {
-  if (likedCards.value.has(card.id)) return;
-
   try {
     const response = await axios.post("/api/like", {
       userId,
@@ -90,14 +87,20 @@ const handleLike = async (card) => {
     });
 
     likeCount.value = response.data.likeCount;
-    likedCards.value.add(card.id);
 
-    // Reload feed if we reached 5 likes
-    if (likeCount.value >= 5 && feedType.value !== "recommended") {
+    if (response.data.action === "liked") {
+      likedCards.value.add(card.id);
+      // Reload feed if we reached 5 likes
+      if (likeCount.value >= 5 && feedType.value !== "recommended") {
+        setTimeout(loadFeed, 500);
+      }
+    } else if (response.data.action === "unliked") {
+      likedCards.value.delete(card.id);
+      // Reload feed to update recommendations
       setTimeout(loadFeed, 500);
     }
   } catch (e) {
-    console.error("Failed to like:", e);
+    console.error("Failed to toggle like:", e);
   }
 };
 

@@ -43,8 +43,39 @@ app.post("/api/events", (req, res) => {
     };
   }
 
-  // Add event to storage
   const entityStorage = userStorage[entityType][entityValue];
+
+  // Handle UNLIKE event - remove the most recent matching LIKE
+  if (triggerType === "UNLIKE") {
+    // Find the most recent LIKE event for this category
+    const likeIndex = entityStorage.triggerEvents.findIndex(
+      (e) => e.triggerType === "LIKE"
+    );
+    if (likeIndex !== -1) {
+      // Remove the LIKE event
+      entityStorage.triggerEvents.splice(likeIndex, 1);
+      entityStorage.rawWeightSum = Math.max(0, entityStorage.rawWeightSum - weight);
+      
+      // If no more events, clean up the entity
+      if (entityStorage.triggerEvents.length === 0) {
+        delete userStorage[entityType][entityValue];
+        
+        // If no more entities in this type, clean up the type
+        if (Object.keys(userStorage[entityType]).length === 0) {
+          delete userStorage[entityType];
+        }
+        
+        // If no more types for this user, clean up the user
+        if (Object.keys(userStorage).length === 0) {
+          usersRecStorage.delete(userId);
+        }
+      }
+    }
+    res.json({ status: "success", action: "unliked" });
+    return;
+  }
+
+  // Add LIKE event to storage
   entityStorage.rawWeightSum += weight;
   entityStorage.triggerEvents.push({
     triggerType,
@@ -52,7 +83,7 @@ app.post("/api/events", (req, res) => {
     timestamp,
   });
 
-  res.json({ status: "success" });
+  res.json({ status: "success", action: "liked" });
 });
 
 // GET /api/recommendations/:userId - Generate recommendations using algorithm

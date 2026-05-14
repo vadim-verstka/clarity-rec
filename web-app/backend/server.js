@@ -221,7 +221,7 @@ app.get("/api/feed/:userId", async (req, res) => {
   }
 });
 
-// Handle like
+// Handle like/unlike
 app.post("/api/like", async (req, res) => {
   const { userId, cardId } = req.body;
   const user = users.get(userId);
@@ -235,26 +235,54 @@ app.post("/api/like", async (req, res) => {
     return res.status(404).json({ error: "Card not found" });
   }
 
-  user.likes.push(cardId);
-  user.likeCount = (user.likeCount || 0) + 1;
+  // Check if user already liked this card
+  const existingLikeIndex = user.likes.indexOf(cardId);
+  
+  if (existingLikeIndex !== -1) {
+    // Unlike: remove the like
+    user.likes.splice(existingLikeIndex, 1);
+    user.likeCount = Math.max(0, user.likeCount - 1);
 
-  // Send event to recommendation service
-  const event = {
-    userId,
-    entityType: "category",
-    entityValue: card.category,
-    triggerType: "LIKE",
-    weight: 1.0,
-    timestamp: Date.now(),
-  };
+    // Send unlike event to recommendation service
+    const event = {
+      userId,
+      entityType: "category",
+      entityValue: card.category,
+      triggerType: "UNLIKE",
+      weight: 1.0,
+      timestamp: Date.now(),
+    };
 
-  try {
-    await axios.post(`${REC_SERVICE_URL}/api/events`, event);
-  } catch (e) {
-    console.error("Failed to send event to rec-service:", e.message);
+    try {
+      await axios.post(`${REC_SERVICE_URL}/api/events`, event);
+    } catch (e) {
+      console.error("Failed to send unlike event to rec-service:", e.message);
+    }
+
+    res.json({ likeCount: user.likeCount, action: "unliked" });
+  } else {
+    // Like: add the like
+    user.likes.push(cardId);
+    user.likeCount = (user.likeCount || 0) + 1;
+
+    // Send like event to recommendation service
+    const event = {
+      userId,
+      entityType: "category",
+      entityValue: card.category,
+      triggerType: "LIKE",
+      weight: 1.0,
+      timestamp: Date.now(),
+    };
+
+    try {
+      await axios.post(`${REC_SERVICE_URL}/api/events`, event);
+    } catch (e) {
+      console.error("Failed to send event to rec-service:", e.message);
+    }
+
+    res.json({ likeCount: user.likeCount, action: "liked" });
   }
-
-  res.json({ likeCount: user.likeCount });
 });
 
 // Get explanations for user
