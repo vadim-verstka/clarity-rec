@@ -1,6 +1,6 @@
 <template>
   <div id="app">
-    <nav v-if="isLoggedIn" class="navbar">
+    <nav v-if="isLoggedIn && !isLoginPage" class="navbar">
       <span class="brand">Система Рекомендаций</span>
       <button @click="logout" class="btn-logout">Выйти</button>
     </nav>
@@ -10,16 +10,17 @@
 
 <script setup>
 import { computed } from "vue";
-import { useRouter } from "vue-router";
+import { useRoute } from "vue-router";
 
-const router = useRouter();
+const route = useRoute();
 
 const isLoggedIn = computed(() => !!localStorage.getItem("adminToken"));
+const isLoginPage = computed(() => route.name === "Login");
 
 const logout = () => {
   localStorage.removeItem("adminToken");
   localStorage.removeItem("currentUserId");
-  router.push("/login");
+  window.location.reload();
 };
 </script>
 
