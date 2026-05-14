@@ -9,19 +9,12 @@
 </template>
 
 <script setup>
-import { ref, watch } from "vue";
-import { useRouter, useRoute } from "vue-router";
+import { computed } from "vue";
+import { useRouter } from "vue-router";
 
 const router = useRouter();
-const route = useRoute();
-const isLoggedIn = ref(!!localStorage.getItem("adminToken"));
 
-watch(
-  () => route.path,
-  () => {
-    isLoggedIn.value = !!localStorage.getItem("adminToken");
-  },
-);
+const isLoggedIn = computed(() => !!localStorage.getItem("adminToken"));
 
 const logout = () => {
   localStorage.removeItem("adminToken");
