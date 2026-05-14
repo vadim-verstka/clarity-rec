@@ -9,18 +9,27 @@
 </template>
 
 <script setup>
-import { computed } from "vue";
-import { useRoute } from "vue-router";
+import { ref, watch, computed } from "vue";
+import { useRoute, useRouter } from "vue-router";
 
 const route = useRoute();
+const router = useRouter();
 
-const isLoggedIn = computed(() => !!localStorage.getItem("adminToken"));
+const isLoggedIn = ref(!!localStorage.getItem("adminToken"));
 const isLoginPage = computed(() => route.name === "Login");
+
+// Следим за изменениями токена в localStorage
+watch(
+  () => localStorage.getItem("adminToken"),
+  (newToken) => {
+    isLoggedIn.value = !!newToken;
+  }
+);
 
 const logout = () => {
   localStorage.removeItem("adminToken");
   localStorage.removeItem("currentUserId");
-  window.location.reload();
+  router.push("/login");
 };
 </script>
 
